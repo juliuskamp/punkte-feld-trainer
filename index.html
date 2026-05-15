@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Punktefeld</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Digitales Punktefeld</h1>
+  <div class="field-selector" role="tablist" aria-label="Feldgröße">
+    <button class="seg active" data-field="100" role="tab" aria-selected="true">100er Feld</button>
+    <button class="seg" data-field="400" role="tab" aria-selected="false">400er Feld</button>
+  </div>
+</header>
+
+<main>
+  <section class="grid-area">
+    <div id="grid-wrap">
+      <svg id="grid" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="mode-selector" id="mode-selector" role="tablist" aria-label="Modus"></div>
+    <div class="task-panel" id="task-panel"></div>
+    <button id="reset-btn" class="reset">Malwinkel zurücksetzen</button>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

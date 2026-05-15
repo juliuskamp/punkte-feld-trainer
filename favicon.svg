@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 8x8 dot grid split into four 4x4 quadrants matching the 400er field colors.
+       Layout: 4 dots, 6px mid-gap, 4 dots. Dot radius 3, dot pitch 7. -->
+  <g>
+    <!-- TL: blue -->
+    <g fill="#2b3fb8">
+      <circle cx="5"  cy="5"  r="3"/><circle cx="12" cy="5"  r="3"/><circle cx="19" cy="5"  r="3"/><circle cx="26" cy="5"  r="3"/>
+      <circle cx="5"  cy="12" r="3"/><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><circle cx="26" cy="12" r="3"/>
+      <circle cx="5"  cy="19" r="3"/><circle cx="12" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><circle cx="26" cy="19" r="3"/>
+      <circle cx="5"  cy="26" r="3"/><circle cx="12" cy="26" r="3"/><circle cx="19" cy="26" r="3"/><circle cx="26" cy="26" r="3"/>
+    </g>
+    <!-- TR: green -->
+    <g fill="#1f9d55">
+      <circle cx="38" cy="5"  r="3"/><circle cx="45" cy="5"  r="3"/><circle cx="52" cy="5"  r="3"/><circle cx="59" cy="5"  r="3"/>
+      <circle cx="38" cy="12" r="3"/><circle cx="45" cy="12" r="3"/><circle cx="52" cy="12" r="3"/><circle cx="59" cy="12" r="3"/>
+      <circle cx="38" cy="19" r="3"/><circle cx="45" cy="19" r="3"/><circle cx="52" cy="19" r="3"/><circle cx="59" cy="19" r="3"/>
+      <circle cx="38" cy="26" r="3"/><circle cx="45" cy="26" r="3"/><circle cx="52" cy="26" r="3"/><circle cx="59" cy="26" r="3"/>
+    </g>
+    <!-- BL: red -->
+    <g fill="#d63a3a">
+      <circle cx="5"  cy="38" r="3"/><circle cx="12" cy="38" r="3"/><circle cx="19" cy="38" r="3"/><circle cx="26" cy="38" r="3"/>
+      <circle cx="5"  cy="45" r="3"/><circle cx="12" cy="45" r="3"/><circle cx="19" cy="45" r="3"/><circle cx="26" cy="45" r="3"/>
+      <circle cx="5"  cy="52" r="3"/><circle cx="12" cy="52" r="3"/><circle cx="19" cy="52" r="3"/><circle cx="26" cy="52" r="3"/>
+      <circle cx="5"  cy="59" r="3"/><circle cx="12" cy="59" r="3"/><circle cx="19" cy="59" r="3"/><circle cx="26" cy="59" r="3"/>
+    </g>
+    <!-- BR: orange -->
+    <g fill="#e98a1a">
+      <circle cx="38" cy="38" r="3"/><circle cx="45" cy="38" r="3"/><circle cx="52" cy="38" r="3"/><circle cx="59" cy="38" r="3"/>
+      <circle cx="38" cy="45" r="3"/><circle cx="45" cy="45" r="3"/><circle cx="52" cy="45" r="3"/><circle cx="59" cy="45" r="3"/>
+      <circle cx="38" cy="52" r="3"/><circle cx="45" cy="52" r="3"/><circle cx="52" cy="52" r="3"/><circle cx="59" cy="52" r="3"/>
+      <circle cx="38" cy="59" r="3"/><circle cx="45" cy="59" r="3"/><circle cx="52" cy="59" r="3"/><circle cx="59" cy="59" r="3"/>
+    </g>
+  </g>
+</svg>

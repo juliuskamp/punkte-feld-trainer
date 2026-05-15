@@ -1,6 +1,6 @@
 # Punktefeld Multiplikation
 
-> **[>>Hier geht es zum Punktefeld<<](juliuskamp.github.io/punkte-feld-trainer/)**
+> **[>>Hier geht es zum Punktefeld<<](https://juliuskamp.github.io/punkte-feld-trainer/)**
 
 Eine Web-App zum Üben von Multiplikation. Die Schüler:innen ziehen einen L-förmigen *Malwinkel* über ein Punktefeld, wählen so ein Rechteck aus Punkten aus und lösen Multiplikationsaufgaben mit unterschiedlichen Methoden.
 

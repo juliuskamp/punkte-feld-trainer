@@ -15,3 +15,7 @@ Eine Web-App zum Üben von Multiplikation. Die Schüler:innen ziehen einen L-fö
   - **Teilaufgaben** (400er) — Auswahl an den Quadrantengrenzen aufteilen.
   - **Malkreuz** (400er) — Malkreuz in zwei Phasen (zuerst Überschriften, dann Tabelle).
 - Nach zwei verschiedenen falschen Eingaben wird die richtige Lösung angezeigt.
+
+## Lizenz
+
+MIT — siehe [LICENSE](LICENSE).

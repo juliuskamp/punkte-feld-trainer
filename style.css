@@ -26,8 +26,11 @@ html, body {
   height: 100%;
   overflow: hidden;
   touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, button {
+  touch-action: manipulation;
 }
 
 header {
@@ -89,6 +92,11 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: pointer;
 }
 
 #grid {
@@ -98,6 +106,10 @@ main {
   height: auto;
   touch-action: none;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
 }
 
 .controls {

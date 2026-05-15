@@ -9,21 +9,21 @@ const state = {
 };
 
 const MODES_100 = [
-  { key: "aufgabe",     label: "Aufgabe" },
-  { key: "gruppen",     label: "Gruppen" },
+  { key: "aufgabe", label: "Aufgabe" },
+  { key: "gruppen", label: "Gruppen" },
   { key: "kernaufgaben", label: "Kernaufgaben" },
 ];
 const MODES_400 = [
-  { key: "aufgabe",      label: "Aufgabe" },
-  { key: "gruppen",      label: "Gruppen" },
+  { key: "aufgabe", label: "Aufgabe" },
+  { key: "gruppen", label: "Gruppen" },
   { key: "teilaufgaben", label: "Teilaufgaben" },
-  { key: "malkreuz",     label: "Malkreuz" },
+  { key: "malkreuz", label: "Malkreuz" },
 ];
 
 const Q_COLORS = {
-  TL: { name: "q-blue",   dot: "#2b3fb8", hex: "#2b3fb8" },
-  TR: { name: "q-green",  dot: "#1f9d55", hex: "#1f9d55" },
-  BL: { name: "q-red",    dot: "#d63a3a", hex: "#d63a3a" },
+  TL: { name: "q-blue", dot: "#2b3fb8", hex: "#2b3fb8" },
+  TR: { name: "q-green", dot: "#1f9d55", hex: "#1f9d55" },
+  BL: { name: "q-red", dot: "#d63a3a", hex: "#d63a3a" },
   BR: { name: "q-orange", dot: "#e98a1a", hex: "#e98a1a" },
 };
 
@@ -35,19 +35,50 @@ const $modeSel = document.getElementById("mode-selector");
 const $panel = document.getElementById("task-panel");
 const $resetBtn = document.getElementById("reset-btn");
 
+// iOS suppresses the synthetic `click` on the first tap after a touch-drag
+// elsewhere on the page. Use this helper for buttons so they fire on the
+// pointerup of the actual tap, not on the (possibly missing) click event.
+function onTap(el, handler) {
+  let downId = null;
+  el.addEventListener("pointerdown", e => { downId = e.pointerId; });
+  el.addEventListener("pointerup", e => {
+    if (e.pointerId !== downId) return;
+    downId = null;
+    handler(e);
+  });
+  el.addEventListener("pointercancel", () => { downId = null; });
+}
+
+// iOS may suppress focus on inputs after a touch-drag on the grid. Force focus
+// on pointerup so a single tap reliably opens the keyboard.
+document.addEventListener("pointerup", (e) => {
+  const t = e.target;
+  if (t instanceof HTMLInputElement && !t.disabled && document.activeElement !== t) {
+    t.focus();
+  }
+});
+
 // --- Init ---
 document.querySelectorAll(".field-selector .seg").forEach(btn => {
-  btn.addEventListener("click", () => {
+  onTap(btn, () => {
     const size = parseInt(btn.dataset.field, 10);
     setField(size);
   });
 });
-$resetBtn.addEventListener("click", () => {
+
+function doReset() {
   state.rows = 0;
   state.cols = 0;
   state.mode = null;
   renderModeSelector();
   render();
+}
+// Use pointerdown so a single tap works on iOS even when an input was focused
+// (the keyboard-dismissing tap would otherwise be wasted as the "first" tap).
+$resetBtn.addEventListener("pointerdown", (e) => {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  e.preventDefault();
+  doReset();
 });
 
 function setField(size) {
@@ -80,7 +111,7 @@ function renderModeSelector() {
     b.textContent = m.label;
     b.setAttribute("role", "tab");
     b.setAttribute("aria-selected", m.key === state.mode ? "true" : "false");
-    b.addEventListener("click", () => {
+    onTap(b, () => {
       state.mode = m.key;
       renderModeSelector();
       renderTaskPanel();
@@ -141,7 +172,6 @@ function quadrantOf(r, c) {
 }
 
 // --- Draw grid ---
-let _overlay = null;       // persistent interaction rect
 let _contentGroup = null;  // group containing all redrawn artwork
 let _currentGeom = null;   // latest geometry for pointer mapping
 
@@ -156,19 +186,14 @@ function drawGrid() {
   $grid.setAttribute("width", vbW);
   $grid.setAttribute("height", vbH);
 
-  // Set up persistent overlay + content group once.
-  if (!_overlay) {
+  // Set up persistent content group once. Pointer handlers go on the HTML
+  // wrapper (a <div>) rather than an SVG <rect> overlay — using an SVG element
+  // as the pointer target caused iOS to treat the next tap after a drag as a
+  // dismissal, ignoring the click on buttons/inputs.
+  if (!_contentGroup) {
     _contentGroup = el("g", {});
     $grid.appendChild(_contentGroup);
-    _overlay = el("rect", {
-      x: 0, y: 0, width: vbW, height: vbH,
-      fill: "transparent", style: "cursor:pointer",
-    });
-    $grid.appendChild(_overlay);
-    attachPointerHandlers(_overlay);
-  } else {
-    _overlay.setAttribute("width", vbW);
-    _overlay.setAttribute("height", vbH);
+    attachPointerHandlers(document.getElementById("grid-wrap"));
   }
 
   // Wipe and redraw the content group only.
@@ -225,28 +250,28 @@ function drawMalwinkel(g) {
 
   // Vertical arm band: straddles col c and col c+1 (those are NOT selected).
   let vL, vR;
-  vL = xCenterAt(c)     - g.dot / 2 - pad;
+  vL = xCenterAt(c) - g.dot / 2 - pad;
   vR = xCenterAt(c + 1) + g.dot / 2 + pad;
 
   // Horizontal arm band: straddles row r and row r+1.
   let hT, hB;
-  hT = yCenterAt(r)     - g.dot / 2 - pad;
+  hT = yCenterAt(r) - g.dot / 2 - pad;
   hB = yCenterAt(r + 1) + g.dot / 2 + pad;
 
   // Outer extents (where the arms terminate at the field edges)
   const xLeftOuter = g.pad - 4;
-  const yTopOuter  = g.pad - 4;
+  const yTopOuter = g.pad - 4;
 
   // Single L-shaped path:
   //   (vL, yTopOuter) → (vR, yTopOuter) → (vR, hB) → (xLeftOuter, hB)
   //                  → (xLeftOuter, hT) → (vL, hT) → close
   const d = roundedPath([
-    [vL,         yTopOuter],
-    [vR,         yTopOuter],
-    [vR,         hB],
+    [vL, yTopOuter],
+    [vR, yTopOuter],
+    [vR, hB],
     [xLeftOuter, hB],
     [xLeftOuter, hT],
-    [vL,         hT],
+    [vL, hT],
   ], rx);
   addToGrid(el("path", {
     d, fill, stroke, "stroke-width": strokeW, "stroke-linejoin": "round",
@@ -263,7 +288,7 @@ function roundedPath(points, r) {
     const next = points[(i + 1) % n];
     const [p1, p2] = trimCorner(prev, curr, next, r);
     if (i === 0) d += `M ${p1[0]} ${p1[1]} `;
-    else         d += `L ${p1[0]} ${p1[1]} `;
+    else d += `L ${p1[0]} ${p1[1]} `;
     d += `Q ${curr[0]} ${curr[1]} ${p2[0]} ${p2[1]} `;
   }
   d += "Z";
@@ -388,10 +413,10 @@ function teilParts() {
   const left = Math.min(c, 10);
   const right = Math.max(0, c - 10);
   const parts = [];
-  if (top && left)   parts.push({ r0: 0,  c0: 0,  rows: top, cols: left,  q: Q_COLORS.TL });
-  if (top && right)  parts.push({ r0: 0,  c0: 10, rows: top, cols: right, q: Q_COLORS.TR });
-  if (bot && left)   parts.push({ r0: 10, c0: 0,  rows: bot, cols: left,  q: Q_COLORS.BL });
-  if (bot && right)  parts.push({ r0: 10, c0: 10, rows: bot, cols: right, q: Q_COLORS.BR });
+  if (top && left) parts.push({ r0: 0, c0: 0, rows: top, cols: left, q: Q_COLORS.TL });
+  if (top && right) parts.push({ r0: 0, c0: 10, rows: top, cols: right, q: Q_COLORS.TR });
+  if (bot && left) parts.push({ r0: 10, c0: 0, rows: bot, cols: left, q: Q_COLORS.BL });
+  if (bot && right) parts.push({ r0: 10, c0: 10, rows: bot, cols: right, q: Q_COLORS.BR });
   return parts;
 }
 
@@ -447,20 +472,21 @@ function attachPointerHandlers(overlay) {
       render();
     }
   }
+  // Use only overlay-local pointer events. No setPointerCapture (which on iOS
+  // makes the *next* tap after a drag get consumed by the capture release),
+  // and no document-level listeners (which produced a stuck state on the
+  // second drag). If the user drags outside the SVG, the selection stops
+  // updating until they return — acceptable, since the SVG is large.
   overlay.addEventListener("pointerdown", e => {
-    overlay.setPointerCapture(e.pointerId);
     dragging = true;
     update(e);
-    e.preventDefault();
   });
   overlay.addEventListener("pointermove", e => {
     if (dragging) update(e);
   });
-  overlay.addEventListener("pointerup", e => {
-    dragging = false;
-    overlay.releasePointerCapture(e.pointerId);
-  });
+  overlay.addEventListener("pointerup", () => { dragging = false; });
   overlay.addEventListener("pointercancel", () => { dragging = false; });
+  overlay.addEventListener("pointerleave", () => { dragging = false; });
 }
 
 // --- Kern decomposition ---
@@ -485,7 +511,7 @@ function kernDecomposition(rows, cols) {
         return {
           text: `${rows}·${cols} = ${big}·${cols} + ${small}·${cols}`,
           parts: [
-            { rows: big,   cols, sign: "+", offsetR: 0,   offsetC: 0 },
+            { rows: big, cols, sign: "+", offsetR: 0, offsetC: 0 },
             { rows: small, cols, sign: "+", offsetR: big, offsetC: 0, padInset: 1 },
           ],
         };
@@ -661,7 +687,7 @@ function renderTeil(r, c) {
   $panel.appendChild(row);
 
   const allInputs = [...partInputs, totalInp];
-  verify.addEventListener("click", () => {
+  onTap(verify, () => {
     const allFilled = allInputs.every(i => i.value.trim() !== "");
     if (!allFilled) {
       allInputs.forEach(i => i.classList.remove("ok", "err"));
@@ -824,7 +850,7 @@ function renderMalkreuz(r, c) {
     });
   }
 
-  verify.addEventListener("click", () => {
+  onTap(verify, () => {
     if (phase === 1) {
       const headerInputs = [...colHeaderInputs, ...rowHeaderInputs];
       const allFilled = headerInputs.every(i => i.value.trim() !== "");
@@ -914,13 +940,13 @@ function appendAnswerInput(expected) {
         feedback.appendChild(document.createElement("br"));
         const reveal = document.createElement("span");
         reveal.className = "reveal-line";
-        reveal.textContent = `Richtig ist ${expected}`;
+        reveal.textContent = `Richtig ist ${expected}.`;
         feedback.appendChild(reveal);
       }
     }
     feedback.className = "feedback " + (result.ok ? "ok" : "err");
   }
-  verify.addEventListener("click", check);
+  onTap(verify, check);
   input.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
 
   row.appendChild(input);

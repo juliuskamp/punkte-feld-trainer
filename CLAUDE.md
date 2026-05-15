@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A static web app — "Digitales Punktefeld" — for German elementary-school students learning multiplication on iPads. A Punktefeld is a grid of dots; students drag an L-shaped "Malwinkel" to select a rectangular sub-grid, then solve multiplication tasks of increasing complexity.
 
-Three files, no build step, no dependencies: `index.html`, `style.css`, `app.js`. Deployed via GitHub Pages — push to main, serve from root.
+No build step, no dependencies: `index.html`, `style.css`, `app.js`, `favicon.svg`. Deployed via GitHub Pages — push to main, serve from root.
 
 ## Running locally
 
@@ -20,18 +20,18 @@ Open `index.html` in a browser, or serve the directory (e.g. `python3 -m http.se
 state = { fieldSize: 100|400, n: 10|20, rows, cols, mode }
 ```
 
+`mode` is `null` on first load and after a reset; until the user picks a mode the task panel shows a "Wähle eine Aufgabenart aus." hint and no mode-specific overlay is drawn on the grid.
+
 `rows`/`cols` is the count of selected dots, **not** a dot index. The L straddles dot index `rows` and dot index `rows+1` (those two dots are NOT selected; the selection is dots `0..rows-1`). `rows` ranges 0..n:
 - `rows = i` (1 ≤ i ≤ n-1): L fully inside the grid, dots `i` and `i+1` covered.
 - `rows = n-1`: L straddles last real dot and first virtual position → half-on, half-off.
 - `rows = n`: L fully outside grid, adjacent to the edge → all `n` dots selected.
 
-The minimum after any tap is clamped to 1 (see `pointToRC` in `attachPointerHandlers`).
+The minimum after any tap is clamped to 1 (see `pointToRC` in `attachPointerHandlers`). Unselected dots (including the two rows/cols covered by the Malwinkel) render at 0.25 opacity; when there is no selection at all (`rows === 0 && cols === 0`) every dot is fully opaque.
 
 ### Rendering
 
-`render()` calls `drawGrid()` (SVG) and `renderTaskPanel()` (HTML). The SVG is split into:
-- A persistent interaction `<rect>` overlay (created once) that owns pointer events. Re-using it across renders is essential — without this, `setPointerCapture` would be lost mid-drag when the SVG redraws.
-- A content `<g>` group that is wiped and rebuilt on each render. Helpers should call `addToGrid(el)` rather than appending directly to `$grid`.
+`render()` calls `drawGrid()` (SVG) and `renderTaskPanel()` (HTML). The SVG holds only a content `<g>` group that is wiped and rebuilt on each render — helpers should call `addToGrid(el)` rather than appending directly to `$grid`. The SVG itself is `pointer-events: none`; pointer handlers are attached once to the HTML `#grid-wrap` div instead (see [iOS notes](#ios-quirks)).
 
 `gridGeom()` is the single source of truth for dot positions. It uses a base `gap` between every dot, an extra `fiveGap` after every 5th dot, and a `tenGap` (400er only) after every 10th. `xs[]`/`ys[]` are dot center coordinates; `pointToRC` and `drawMalwinkel` both extrapolate one or two pitches past the last dot for the half-on / fully-outside states.
 
@@ -56,7 +56,26 @@ All inputs go through `gradeInput(inp)` + `applyGrade(inp, result)`. Two-attempt
 - Wrong with a value different from the last wrong attempt → counter increments. On the 2nd such attempt, the correct answer is revealed in a `.answer-reveal` sibling.
 - Wrong with the same value as last attempt → no counter advance (pressing Prüfen repeatedly without changing the input doesn't reveal the answer).
 
+The reveal text differs by mode (all driven from `applyGrade` + per-mode wrapper):
+- **Aufgabe / Gruppen / Kernaufgaben** (single input via `appendAnswerInput`): the inline `.answer-reveal` is suppressed; instead the `.feedback` area shows "Noch nicht richtig." with "Richtig ist X" appended as a green second line (`.reveal-line` class, see `style.css`).
+- **Teilaufgaben**: inline `.answer-reveal` next to each input, formatted as "Richtig: X".
+- **Malkreuz**: inline `.answer-reveal` with just the number (detected via `dataset.kind` or the `malkreuz-head` class inside `applyGrade`).
+
 State lives in the input's `dataset` (`lastWrong`, `wrongCount`), so re-rendering the panel (e.g. moving the Malwinkel, switching modes) resets it automatically.
+
+### Input restrictions
+
+Number-only inputs all have `inputMode="numeric"` (numeric on-screen keyboard on iOS). A delegated `input` listener on `document` strips any non-digit characters and removes leading zeros (a single "0" is kept).
+
+### iOS quirks
+
+iPad behaviour is the main reason for several non-obvious choices in this codebase. **Do not change these without testing on a real iPad** — most of them were arrived at after observed regressions.
+
+- **No `setPointerCapture` on the grid.** Capturing the pointer caused the *next* tap after a drag to be consumed as the capture-release, so the first tap on any button/input was ignored. Drag tracking is overlay-local on `#grid-wrap`; if the finger leaves the wrapper the selection stops updating until it returns.
+- **Pointer events on the HTML wrapper, not the SVG.** The previous transparent `<rect>` overlay inside the SVG also triggered the same first-tap-ignored bug on iOS even without capture. The SVG has `pointer-events: none` so events naturally hit `#grid-wrap`. `pointToRC` still uses `$grid.getScreenCTM()` to map screen coords to dot indices.
+- **Buttons use `onTap`, not `click`.** iOS suppresses the synthetic `click` on the first tap after a touch-drag elsewhere on the page. The `onTap(el, handler)` helper fires on `pointerup` (matched against the `pointerdown` `pointerId`). Use it for every new button. The reset button instead binds `pointerdown` directly because it must work even while an input is focused (the keyboard-dismissing tap would otherwise be the wasted "first" tap).
+- **Document-level `pointerup` focuses inputs.** With click suppression, native focus on inputs after a drag isn't reliable either. The handler near the top of `app.js` calls `.focus()` on any `HTMLInputElement` the user taps that isn't already focused.
+- **`user-select: none` is scoped to the SVG/wrapper, not the body.** Putting it on `body` made iOS interpret the next tap after a touch as a "selection-dismissal" step.
 
 ## Conventions
 

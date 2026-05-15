@@ -58,6 +58,19 @@ document.addEventListener("pointerup", (e) => {
   }
 });
 
+// Restrict answer inputs to digits only. inputMode="numeric" already requests
+// the numeric on-screen keyboard on iOS; this strips any non-digit characters
+// pasted or typed via a hardware keyboard.
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (!(t instanceof HTMLInputElement)) return;
+  if (t.inputMode !== "numeric") return;
+  let cleaned = t.value.replace(/\D+/g, "");
+  // Strip leading zeros, but keep a single "0" if that's all there is.
+  cleaned = cleaned.replace(/^0+(?=\d)/, "");
+  if (cleaned !== t.value) t.value = cleaned;
+});
+
 // --- Init ---
 document.querySelectorAll(".field-selector .seg").forEach(btn => {
   onTap(btn, () => {
